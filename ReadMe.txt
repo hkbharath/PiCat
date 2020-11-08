@@ -16,6 +16,7 @@ Setup GPU access with steps from: http://support.scss.tcd.ie/index.php/SCSS_GPU_
 ssh <uname>@slurm-master.scss.tcd.ie
 ./register_job.sh python PycharmProjects/SCP2/train_char.py --width 128 --height 64 --length 6 --batch-size 64 --train-dataset PycharmProjects/SCP2/charTrainSet --validate-dataset PycharmProjects/SCP2/charValidationSet/ --output-model-name PycharmProjects/SCP2/Models/testChar --epochs=50 --symbols PycharmProjects/SCP2/Symbolsets/symbols.txt
 
+
 ****** Training the Models for length ******
 ssh <uname>@slurm-master.scss.tcd.ie
 ./register_job.sh python PycharmProjects/SCP2/train_length.py --width 128 --height 64 --length 6 --batch-size 64 --train-dataset PycharmProjects/SCP2/lenTrainSet --validate-dataset PycharmProjects/SCP2/lenValidationSet/ --output-model-name PycharmProjects/SCP2/Models/testLen --epochs=50 --symbols PycharmProjects/SCP2/Symbolsets/symbols.txt

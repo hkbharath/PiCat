@@ -9,8 +9,6 @@ import argparse
 import captcha.image
 import numpy as np
 
-img_variations = 0
-
 #rotates an image by given angle
 #Ref:https://stackoverflow.com/a/9042907/1761743
 def transform_image(image):
@@ -90,10 +88,6 @@ def main():
         image = numpy.array(captcha_generator.generate_image(random_str))
         cv2.imwrite(image_path, image)
 
-        for i in range(img_variations):
-            image_path = get_image_path(args.output_dir, random_str)
-            imagev = transform_image(image)
-            cv2.imwrite(image_path, imagev)
 
 if __name__ == '__main__':
     main()
