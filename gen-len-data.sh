@@ -2,15 +2,10 @@
 train_data="lenTrainSet"
 validate_data="lenValidationSet"
 
-# main_train=2000
-# main_val=400
-# special_train=6000
-# special_val=1200
-
-main_train=20
-main_val=4
-special_train=60
-special_val=12
+main_train=2000
+main_val=400
+special_train=6000
+special_val=1200
 
 for char_len in 1 2 3 4 5 6
 do
