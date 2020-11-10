@@ -159,7 +159,7 @@ def main():
     # with tf.device('/device:CPU:0'):
     # with tf.device('/device:XLA_CPU:0'):
     # with tf.device('/device:XLA_GPU:0'):
-        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
+        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3), module_size=2, model_depth=5)
 
         if args.input_model is not None:
             model.load_weights(args.input_model)
@@ -196,6 +196,12 @@ def main():
         except KeyboardInterrupt:
             print('KeyboardInterrupt caught, saving current weights as ' + args.output_model_name+'_/model_resume.h5')
             model.save_weights(args.output_model_name+'/model_resume.h5')
+
+        tf_converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        tflite_model = tf_converter.convert()
+        destModel = os.path.join(args.output_model_name, "model_char.tflite")
+        with open(destModel, "wb") as tfl_model:
+            tfl_model.write(tflite_model)
 
 if __name__ == '__main__':
     main()
