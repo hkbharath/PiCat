@@ -96,6 +96,20 @@ class ImageSequence(keras.utils.Sequence):
 
         return X, y
 
+def saveTfLiteModel(model, model_name="tfl_model"):
+    tf_converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    tflite_model = tf_converter.convert()
+    destModel = os.path.join(model_name, "model_char.tflite")
+    with open(destModel, "wb") as tfl_model:
+        tfl_model.write(tflite_model)
+
+class SaveTfLite(keras.callbacks.Callback):
+    def __init__(self, model_name):
+        self.model_name = model_name
+
+    def on_epoch_end(self, batch, logs={}):
+        saveTfLiteModel(self.model, self.model_name)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--width', help='Width of captcha image', type=int)
@@ -175,12 +189,14 @@ def main():
         if not os.path.exists(args.output_model_name):
             os.mkdir(args.output_model_name)
 
+        save_tflite = SaveTfLite(args.output_model_name)
         tlogdir = args.output_model_name + "/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         tb_callback = keras.callbacks.TensorBoard(log_dir=tlogdir, histogram_freq=1, update_freq='batch')
         callbacks = [keras.callbacks.EarlyStopping(monitor='loss', patience=3),
                      # keras.callbacks.CSVLogger('log.csv'),
                      keras.callbacks.ModelCheckpoint(args.output_model_name+'/model_checkpoint.h5', save_best_only=True, save_freq='epoch'),
-                     tb_callback]
+                     tb_callback,
+                     save_tflite]
 
         # Save the model architecture to JSON
         with open(args.output_model_name+"/model.json", "w") as json_file:
@@ -196,11 +212,6 @@ def main():
             print('KeyboardInterrupt caught, saving current weights as ' + args.output_model_name+'_/model_resume.h5')
             model.save_weights(args.output_model_name+'/model_resume.h5')
         
-        tf_converter = tf.lite.TFLiteConverter.from_keras_model(model)
-        tflite_model = tf_converter.convert()
-        destModel = os.path.join(args.output_model_name, "model_len.tflite")
-        with open(destModel, "wb") as tfl_model:
-            tfl_model.write(tflite_model)
 
 if __name__ == '__main__':
     main()

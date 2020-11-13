@@ -16,7 +16,7 @@ import datetime
 import numpy as np
 
 #constants
-dropout_factor = 0.15
+dropout_factor = 0.1
 model_pref = "Models"
 
 # Build a Keras model given some parameters
@@ -28,7 +28,7 @@ def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5
           x = keras.layers.Conv2D(32*2**min(i, 3), kernel_size=3, padding='same', kernel_initializer='he_uniform')(x)
           x = keras.layers.BatchNormalization()(x)
           x = keras.layers.Activation('relu')(x)
-          x = keras.layers.Dropout(dropout_factor)(x)
+          #x = keras.layers.Dropout(dropout_factor)(x)
       x = keras.layers.MaxPooling2D(2)(x)
 
   x = keras.layers.Flatten()(x)
@@ -97,6 +97,20 @@ class ImageSequence(keras.utils.Sequence):
 
         return X, y
 
+def saveTfLiteModel(model, model_name="tfl_model"):
+    tf_converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    tflite_model = tf_converter.convert()
+    destModel = os.path.join(model_name, "model_char.tflite")
+    with open(destModel, "wb") as tfl_model:
+        tfl_model.write(tflite_model)
+
+class SaveTfLite(keras.callbacks.Callback):
+    def __init__(self, model_name):
+        self.model_name = model_name
+
+    def on_epoch_end(self, batch, logs={}):
+        saveTfLiteModel(self.model, self.model_name)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--width', help='Width of captcha image', type=int)
@@ -159,13 +173,13 @@ def main():
     # with tf.device('/device:CPU:0'):
     # with tf.device('/device:XLA_CPU:0'):
     # with tf.device('/device:XLA_GPU:0'):
-        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3), module_size=2, model_depth=5)
+        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3), model_depth=6, module_size=3)
 
         if args.input_model is not None:
             model.load_weights(args.input_model)
 
         model.compile(loss='categorical_crossentropy',
-                      optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
+                      optimizer=keras.optimizers.Adam(1e-4, amsgrad=True),
                       metrics=['accuracy'])
 
         model.summary()
@@ -178,10 +192,12 @@ def main():
 
         tlogdir = args.output_model_name + "/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         tb_callback = keras.callbacks.TensorBoard(log_dir=tlogdir, histogram_freq=1, update_freq='batch')
-        callbacks = [keras.callbacks.EarlyStopping(monitor='loss', patience=4),
+        save_tflite = SaveTfLite(args.output_model_name)
+        callbacks = [keras.callbacks.EarlyStopping(monitor='loss', patience=3),
                      # keras.callbacks.CSVLogger('log.csv'),
                      keras.callbacks.ModelCheckpoint(args.output_model_name+'/model_checkpoint.h5', save_best_only=True),
-                     tb_callback]
+                     tb_callback,
+                     save_tflite]
 
         # Save the model architecture to JSON
         with open(args.output_model_name+"/model.json", "w") as json_file:
@@ -197,11 +213,6 @@ def main():
             print('KeyboardInterrupt caught, saving current weights as ' + args.output_model_name+'_/model_resume.h5')
             model.save_weights(args.output_model_name+'/model_resume.h5')
 
-        tf_converter = tf.lite.TFLiteConverter.from_keras_model(model)
-        tflite_model = tf_converter.convert()
-        destModel = os.path.join(args.output_model_name, "model_char.tflite")
-        with open(destModel, "wb") as tfl_model:
-            tfl_model.write(tflite_model)
-
+        
 if __name__ == '__main__':
     main()
