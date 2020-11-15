@@ -9,6 +9,20 @@ import argparse
 import captcha.image
 import numpy as np
 
+import codecs
+
+#encode
+def encode_img_name(img_name):
+    hex_string = codecs.encode(img_name.encode(), "hex")
+    hex_string = hex_string.decode("ASCII")
+    return hex_string
+
+#decode
+def decode_img_name(hex_img_name):
+    bytes_object = bytes.fromhex(hex_img_name)
+    ascii_string = bytes_object.decode("ASCII")
+    return ascii_string
+
 #rotates an image by given angle
 #Ref:https://stackoverflow.com/a/9042907/1761743
 def transform_image(image):
@@ -26,7 +40,7 @@ def transform_image(image):
 
 def get_image_path(img_dir, random_str):
     #replace '/' in the path to 1.
-    random_str = random_str.replace('/','1')
+    random_str = encode_img_name(random_str)
 
     image_path = os.path.join(img_dir, random_str + '.png')
     if os.path.exists(image_path):

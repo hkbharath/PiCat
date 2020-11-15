@@ -15,6 +15,20 @@ import tensorflow.keras as keras
 import datetime
 import numpy as np
 
+import codecs
+
+#encode
+def encode_img_name(img_name):
+    hex_string = codecs.encode(img_name.encode(), "hex")
+    hex_string = hex_string.decode("ASCII")
+    return hex_string
+
+#decode
+def decode_img_name(hex_img_name):
+    bytes_object = bytes.fromhex(hex_img_name)
+    ascii_string = bytes_object.decode("ASCII")
+    return ascii_string
+
 #constants
 dropout_factor = 0.1
 model_pref = "Models"
@@ -77,20 +91,23 @@ class ImageSequence(keras.utils.Sequence):
 
             # We've used this image now, so we can't repeat it in this iteration
             self.used_files.append(self.files.pop(random_image_label))
+            kernel = np.ones((5,5),np.uint8)
 
             # We have to scale the input pixel values to the range [0, 1] for
             # Keras so we divide by 255 since the image is 8-bit RGB
             raw_data = cv2.imread(os.path.join(self.directory_name, random_image_file))
             rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
-            processed_data = numpy.array(rgb_data) / 255.0
+            # noise_cancel_data = cv2.morphologyEx(rgb_data, cv2.MORPH_OPEN, kernel)
+            # processed_data = numpy.array(noise_cancel_data) / 255.0
             
+            processed_data = numpy.array(rgb_data) / 255.0
             X[i] = processed_data
 
             # We have a little hack here - we save captchas as TEXT_num.png if there is more than one captcha with the text "TEXT"
             # So the real label should have the "_num" stripped out.
 
             random_image_label = random_image_label.split('_')[0]
-
+            random_image_label = decode_img_name(random_image_label)
             for j, ch in enumerate(random_image_label):
                 y[j][i, :] = 0
                 y[j][i, self.captcha_symbols.find(ch)] = 1
@@ -173,13 +190,13 @@ def main():
     # with tf.device('/device:CPU:0'):
     # with tf.device('/device:XLA_CPU:0'):
     # with tf.device('/device:XLA_GPU:0'):
-        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3), model_depth=6, module_size=3)
+        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3), model_depth=6, module_size=2)
 
         if args.input_model is not None:
             model.load_weights(args.input_model)
 
         model.compile(loss='categorical_crossentropy',
-                      optimizer=keras.optimizers.Adam(1e-4, amsgrad=True),
+                      optimizer=keras.optimizers.Adam(5e-4, amsgrad=True),
                       metrics=['accuracy'])
 
         model.summary()

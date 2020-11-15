@@ -18,8 +18,7 @@ import itertools
 def decode(characters, y, len_y):
     y_idx = numpy.argmax(numpy.array(y), axis=1)
     y_pred = numpy.max(numpy.array(y), axis=1)
-    
-    #Verify this calculation 
+     
     cap_len = numpy.argmax(numpy.array(len_y)) + 1
 
     y_chars = numpy.argsort(y_pred)[-cap_len:]
@@ -29,7 +28,9 @@ def decode(characters, y, len_y):
 
 def decode_fix(characters, y):
     y_idx = numpy.argmax(numpy.array(y), axis=1)
-    res = ''.join([characters[x] for x in y_idx])
+    y_pred = numpy.max(numpy.array(y), axis=1)
+    #res = ''.join([characters[x] for x in y_idx])
+    res = ''.join([characters[x] for i,x in enumerate(y_idx) if y_pred[i]>0.65])
     return res
 
 def main():
@@ -45,9 +46,9 @@ def main():
         print("Please specify the CNN model to use")
         exit(1)
     
-    # if args.len_model_name is None:
-    #     print("Please specify the CNN model to use")
-    #     exit(1)
+    if args.len_model_name is None:
+        print("Please specify the CNN model to use")
+        exit(1)
 
     if args.captcha_dir is None:
         print("Please specify the directory with captchas to break")
@@ -90,12 +91,22 @@ def main():
             #               optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
             #               metrics=['accuracy'])
 
+            #char length tflite model
+            len_interpreter = tflite.Interpreter(args.len_model_name+'/model_len.tflite')
+            len_interpreter.allocate_tensors()
+
+            len_input_d = len_interpreter.get_input_details()
+            len_output_d = len_interpreter.get_output_details()
+
+            
             # char pref tflite model
-            char_interpreter = tflite.Interpreter(args.model_name+'/model.tflite')
+            char_interpreter = tflite.Interpreter(args.model_name+'/model_char.tflite')
             char_interpreter.allocate_tensors()
 
             char_input_d = char_interpreter.get_input_details()
             char_output_d = char_interpreter.get_output_details()
+
+            
 
             for x in os.listdir(args.captcha_dir):
                 # load image and preprocess it
@@ -105,6 +116,13 @@ def main():
                 (c, h, w) = image.shape
                 # assuming that input will have same size as of trained image
                 image = image.reshape([-1, c, h, w])
+
+                #length part
+                len_interpreter.set_tensor(len_input_d[0]['index'], image)
+                len_interpreter.invoke()
+
+                len_prediction = len_interpreter.get_tensor(len_output_d[0]['index'])
+
                 
                 # prediction = model.predict(image)
                 # len_prediction = len_model.predict(image)
@@ -118,8 +136,8 @@ def main():
                 
                 prediction = numpy.reshape(prediction, (len(char_output_d),-1))
 
-                #res = decode(captcha_symbols, prediction, len_prediction)
-                res = decode_fix(captcha_symbols, prediction)
+                res = decode(captcha_symbols, prediction,len_prediction)
+                # res = decode_fix(captcha_symbols, prediction)
                 output_file.write(x + "," + res + "\n")
 
                 print('Classified ' + x)
