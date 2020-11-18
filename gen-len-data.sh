@@ -1,11 +1,11 @@
 #!/bin/bash
-train_data="lenTrainSet"
-validate_data="lenValidationSet"
+train_data="lenTrainLargeSet"
+validate_data="lenValidationLargeSet"
 
-main_train=2000
-main_val=400
-special_train=6000
-special_val=1200
+main_train=33000
+main_val=6600
+special_train=10000
+special_val=2000
 
 for char_len in 1 2 3 4 5 6
 do

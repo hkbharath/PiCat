@@ -3,3 +3,7 @@ charValidationSet/
 lenTrainSet/
 lenValidationSet/
 Models/
+charTrainSmallSet/
+charValidationSmallSet/
+lenTrainLargeSet/
+lenValidationLargeSet/

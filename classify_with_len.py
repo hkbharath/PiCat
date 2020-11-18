@@ -33,6 +33,12 @@ def decode_fix(characters, y):
     res = ''.join([characters[x] for i,x in enumerate(y_idx) if y_pred[i]>0.65])
     return res
 
+def decode_mix(characters, y):
+    y_idx = numpy.argmax(numpy.array(y), axis=1)
+    sym_len = len(characters)
+    res = ''.join([characters[x] for i,x in enumerate(y_idx) if x < sym_len])
+    return res
+    
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-name', help='Model name to use for classification', type=str)
@@ -136,8 +142,9 @@ def main():
                 
                 prediction = numpy.reshape(prediction, (len(char_output_d),-1))
 
-                res = decode(captcha_symbols, prediction,len_prediction)
+                # res = decode(captcha_symbols, prediction,len_prediction)
                 # res = decode_fix(captcha_symbols, prediction)
+                res = decode_mix(captcha_symbols, prediction)
                 output_file.write(x + "," + res + "\n")
 
                 print('Classified ' + x)

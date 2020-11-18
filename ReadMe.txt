@@ -30,15 +30,12 @@ tensorboard --logdir .
 
 
 
-****** Classify the images in Pi ****** [Draft 1 only for fixed length]
+****** Test Classify the images ******
 # activate v-env
-source captcha/bin/activate
-python ~/PycharmProjects/SCP2/classify_with_len.py --model-name ~/PycharmProjects/SCP2/Models/tfLiteModel1 --captcha-dir classifImg/ --output ~/captcha/preds.txt --symbols ~/PycharmProjects/SCP2/Symbolsets/symbols.txt
-
-****** Pending installs ******
-NOTE: need to install tflite_runtime in Pi
-pip install https://github.com/google-coral/pycoral/releases/download/release-frogfish/tflite_runtime-2.5.0-cp38-cp38-linux_armv7l.whl
+python ~/PycharmProjects/SCP2/classify_char.py --model-name ~/PycharmProjects/SCP2/Models/tfLiteModel1 --captcha-dir classifImg/ --output ~/captcha/preds.txt --symbols ~/PycharmProjects/SCP2/Symbolsets/symbols.txt
 
 
-****** Capture Setup configs ******
-pip freeze -l > ~/PycharmProjects/SCP2/setup/requirements.txt
+
+****** Package the model ******
+bash setup/package.sh <Model Directory> <Client Package Git Directory>
+
